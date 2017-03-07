@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html>
+<meta charset="utf-8">
+<style>
+    #menu1 {
+        position:absolute;
+        left: 1010px;
+        top:50px;
+    }
+	.state{
+		fill: none;
+		stroke: #a9a9a9;
+		stroke-width: 1;
+        fill-opacity: 1;
+	}
+	.state:hover{
+		fill-opacity:0.5;
+	}
+	#tooltip {   
+		position: absolute;           
+		text-align: center;
+		padding: 20px;             
+		margin: 10px;
+		font: 12px sans-serif;        
+		background: lightsteelblue;   
+		border: 1px;      
+		border-radius: 2px;           
+		pointer-events: none;         
+	}
+	#tooltip h4{
+		margin:0;
+		font-size:14px;
+	}
+	#tooltip{
+		background:rgba(0,0,0,0.9);
+		border:1px solid grey;
+		border-radius:5px;
+		font-size:12px;
+		width:auto;
+		padding:4px;
+		color:white;
+		opacity:0;
+	}
+	#tooltip table{
+		table-layout:fixed;
+	}
+	#tooltip tr td{
+		padding:0;
+		margin:0;
+	}
+	#tooltip tr td:nth-child(1){
+		width:50px;
+	}
+	#tooltip tr td:nth-child(2){
+		text-align:center;
+	}
+    #tooltip_2 {
+        position: absolute;           
+		text-align: center;
+		padding: 20px;             
+		margin: 10px;                    
+		pointer-events: none; 
+		background:lightblue;
+		border:0.8px solid grey;
+		border-radius:5px;
+		font:18px sans-serif;
+		width:auto;
+		padding:4px;
+		color:black;
+		opacity:0;
+	}
+    .boxes:hover {
+        fill:green;
+        fill-opacity:0.5;
+    }
+    #yAxis path {
+        fill: none;
+        stroke: #000;
+        stroke-width: 3px;
+    }
+    #xAxis path {
+        fill: none;
+        stroke: #000;
+        stroke-width: 3px;
+    }
+    #xAxis line {
+        fill: none;
+        stroke: silver;
+        stroke-width: 1;
+        shape-rendering: crispEdges;
+    }
+    input[type=range] {
+        -webkit-appearance: slider-horizontal;
+        width: 960px;
+    }   
+    input[type="range"]::-webkit-slider-thumb {
+        background-color: black;
+        opacity: 0.8;
+        width: 10px;
+        height: 30px;
+    }
+</style>
+    
+<body>
+    
+<p style="position:absolute;left:150px;font-size:24px;color:darkblue">
+    <em>Historical US Presidential Election Results by State (1956-2012)</em>
+</p>
+<p class="note" style="font-size:24px">Year: <span id="Year-value" style="background-color:lightgreen"></span>;&nbsp;<span id="party_text"></span></p>
+<p style="position:absolute;left:1120px;top:0px;font-size:24px;color:darkblue;margin-top:12px;">
+    <em>Boxplot: Average Votes Margin by State</em>
+</p>
+<select id="menu1" style="background-color:silver">
+  <option value="1">Rank by State Name</option>
+  <option value="2">Rank by Margin</option>
+</select>
+<div id="tooltip"></div><!-- div to hold tooltip. -->
+<div id="tooltip_2"></div>
+<svg width="1650" height="675" id="entire_canvas">
+<svg x="0" y="0" width="960" height="600" id="statesvg"></svg> <!-- svg to hold the map. -->
+<svg x="970" y="0" width="660" height="675" id="mysvg1"></svg> <!-- svg to hold the box plot. -->
+</svg>
+<input id="Slider" type="range" min="1956" max="2012" step="4" />
+
+    
+
+<!-- The scripts for creating the interactive map -->
+<script src="uStates.js"></script> <!-- creates uStates. -->
+<script src="http://d3js.org/d3.v3.min.js"></script>
+    
+<script>
+	function tooltipHtml(n, d){	/* function to create html content string in tooltip div. */
+		return "<h4>"+n+"</h4><table>"+
+			"<tr><td>Margin: </td><td>"+(d.votes_margin)+"</td></tr>"+
+			"</table>";
+	}
+</script>
+
+<script>
+    var mydata_1=[
+        [-17.10,22.1,-6.7,11.1,20.7,27.4,10.5,0,14.5,-33.1,0,22.4,19.2,20.2,18.4,31.2,9.1,13.8,41.8,20.1,18.9,11.5,7.6,-33.7,-0.2,14.2,31,16,32.3,30.5,16,22.5,-1.4,23.6,22.2,10.2,10.5,13.2,16.6,-20.2,16.8,0.6,11.3,29.2,44.4,17,8.5,8.2,23.8,20.2,15.4],[-15.1,1.8,11.1,-7.1,0.5,9.7,-7.4,-1.6,0,3,-25.1,0,7.6,-0.2,10.4,13.5,21.3,7.2,-21.8,14,-7.2,-20.6,-2.1,-1.4,-11.6,-0.6,2.5,24.2,-2.4,6.8,-0.8,-0.8,-5.2,-4.2,10.9,6.6,18,5.3,-2.4,-27.2,-2.4,16.4,7.1,-2,9.6,17.3,5.4,2.4,-5.4,3.8,10,-0.2],[69.5,-31.8,0.9,-12.7,-18.3,-23.1,-35.7,-22.1,-71,-2.2,8.2,-57.6,-1.8,-19,-12.4,-24,-9,-28.3,13.6,-37.6,-31,-52.8,-33.6,-27.8,74.2,-28,-18.3,-5.2,-17.2,-27.8,-31.7,-18.6,-37.3,-12.4,-16.1,-25.8,-11.4,-27.7,-30.2,-61.8,17.8,-11.2,-11,-26.8,-9.4,-32.6,-7.3,-24.6,-35.8,-24.4,-13.2,-22.6],[-4.7,2.7,19.8,0.4,3.1,9.2,-5.2,3.5,-63.6,9.6,3.7,-21.1,26.1,2.9,12.3,12.2,20.1,6.2,-4.7,-12.2,-1.7,-30.1,-6.7,-12.5,-9.5,1.2,9,28,8.2,8.2,2.1,12.1,-5.4,10.3,17.7,2.3,15.7,6,-3.6,-32.2,8.5,11.3,9.7,-1.2,25.4,9.3,10.9,-2.1,-8.8,3.6,20.3,0.7],[46.9,23.5,32.8,38.2,13.5,28,18.5,20.4,-56.5,44.1,50.4,25,38.2,18.5,32.8,17.1,38.2,28.6,36.9,23,23.9,-9,14.4,5.5,58.6,24.6,20.1,41,27.4,29.1,24.8,24.5,17.3,40.6,26.3,21.5,49.7,10.1,20,6.2,43.1,8.7,38,32.9,41.2,26.2,37.7,18.3,27.2,9.7,38.5,23.2],[-13.1,22.2,16.6,-30.1,1.7,11.4,5.2,-5.4,-65.1,-5.3,-33.7,-2.5,22.5,2,7.6,1,7.6,-7.2,-5.7,0.8,-6.1,-15.7,5.4,-12.9,-1.9,-3.6,7.4,20.7,4.4,11.2,2.2,2.4,-4.4,-11,5.8,-0.2,1.3,0.2,-2.7,-11.3,-13.1,1.5,-13,-3.1,28.8,11.3,1.3,3.9,-16.1,-1.6,19.5,-2.1],[1.4,27.9,32.4,0.6,16.8,24,9.7,2.4,-61.4,17,-14.8,-1.9,41.3,7.9,18.3,12.7,24.6,1.5,5.5,3.3,-2.9,0.2,6.5,-3.9,1.3,6.9,24.4,39.5,35.6,29.3,13.4,18.2,2.7,2.1,37.9,10.6,25.5,9.6,7.1,-10.5,1.3,28.8,0.3,13.9,52.2,6,12.7,12.4,-4.5,4.7,34.6,9.7],[22.2,36.8,33.9,22.2,16.2,28.3,21.9,19.9,-71.7,30.6,20.4,11.3,46,12.9,24,7.4,33.7,20.6,22.6,22,5.5,2.8,19,-0.2,24.5,20,22.3,41.8,33.8,37.7,20.9,20.5,8,24,31,18.8,37.9,12.2,7.3,3.7,28,26.5,16.2,27.5,49.8,17.1,25.2,12.9,10.5,9.2,42.3,18.2],[19.3,23.3,21.3,14.2,3.5,7.8,5.1,12.4,-68.3,22.4,20.3,-9.5,26.1,2.1,20.1,-10.2,13.2,11.6,10.2,11.4,2.9,-7.8,7.9,-7,20.8,4,5.9,21,21,26.1,13.6,5,-4.1,16.3,13,10.9,16.6,-4.7,2.3,-11.7,23.9,6.3,16.4,12.7,34.2,3.5,20.5,-1.5,-4.7,-3.6,22.5,7.8],[6.7,9.2,2,-17.7,-13.4,-4.2,-6.4,-8.2,-75.5,1.9,-0.6,-11.4,13.6,-14.3,6.1,-6,5.2,-3.3,-4.6,-8.4,-14.2,-18.5,-7.4,-11.6,8.9,-10.2,-2.5,17.2,-2.7,-1.3,-2.4,-8.6,-15.8,0.7,12,-1.9,8.6,-10,-9,-18,8.1,3.6,-4.7,3.5,18.7,-15.7,4.4,-11.4,-13,-4.3,5.6,-5.6],[6.9,17.5,-2.2,-16.9,-12.9,1.4,-18.1,-15.2,-75.9,-5.7,1.2,-25.3,18.6,-17.5,5.5,-10.4,18.2,-0.9,-12.1,-20.8,-16,-33.4,-13.2,-16.1,5.1,-6.3,2.8,18.7,-1,-9.9,-17.8,-7.3,-28.9,4.7,6.8,-6.4,7.9,-8.1,-9.2,-32.9,5.8,3.5,-2.4,5,21.1,-22.3,2,-12.5,-14.7,-10.3,13,-8.5],[14.9,30.9,6.3,5.4,-11.7,8.4,-17.5,-13.1,-76.2,0,11.7,-18.3,39.6,-12,15.6,-0.3,20.8,15.1,7.7,-5.1,-16.2,-27.3,-5.2,-2.4,16.9,3.3,25,28.9,3.5,1.3,-15.8,-0.1,-25,12.8,27.6,3.6,21.9,-0.5,-4.2,-29.1,15.9,22.7,3.8,21.3,40.5,-9.9,8.1,-5.6,6.3,-0.2,40.1,-0.5],[25.7,25.6,10.5,9.8,-9.9,4.7,-10.4,-7.5,-79.9,5,16.6,-8.7,38.1,-10.3,20.6,0.7,25.4,19.8,14.5,-9,-13,-25.1,-3.4,-3.5,19.7,7.2,20.5,33.2,2.6,-1.3,-6.7,0.8,-18.3,12.4,27.4,2.1,31.2,-4.1,-2.5,-20.7,17.1,21.5,14.3,22.9,45.5,-20.1,8.2,-7.2,12.9,-0.4,39.8,2.4],[21.6,21.5,8.5,19.8,-24,-9,-22.4,-25,-86,-2.8,5.2,-45.2,25.4,-25.1,-1,-9.5,14.9,16.2,18.7,-17.3,-25.4,-25.8,-16.4,-10.3,13.2,0.1,2.2,14.9,-12.4,-9.7,-15.6,-15.1,-26.7,-0.3,8.7,-4.6,31.2,-16.3,-10.3,-27.9,9,8.5,15.1,11.8,28.2,-37.1,-6.3,-17.2,13.1,-13.9,32,-7.2],[22.1,14,9.1,23.7,-23.1,-5.4,-17.4,-18.6,-83.6,-0.9,7.8,-42.7,31.9,-16.9,10.2,-5.8,21.7,22.7,17.2,-15.3,-26.1,-23.2,-9.5,-7.7,11.5,9.4,13.7,21.8,-6.7,-5.5,-17.7,-10.2,-28.2,2,19.6,-3,33.6,-12.1,-5.4,-27.5,10.5,18,20.4,15.8,48.1,-35.6,-3.9,-14.9,26.8,-6.9,40.8,-3.9]
+    ];
+
+    var j=1;
+    var stateData;
+    
+    update(1956);
+    d3.select("#entire_canvas").append("text").attr("x",0).attr("y",673).text("1956");
+    d3.select("#entire_canvas").append("text").attr("x",930).attr("y",673).text("2012");
+    d3.select("#Slider").on("input", function() {update(+this.value);});
+
+    function update(year) {
+        d3.select("#Slider").property("value", year);
+        d3.select("#Year-value").text(year);
+        j=(year-1952)/4;
+        var party;
+        var text_color;
+        if (mydata_1[j-1][51]<0 && year!=2000) {
+            party="Democratic Won";
+            text_color="blue";
+        }
+        else if (mydata_1[j-1][51]>=0 && year!=2000) {
+            party="Republican Won";
+            text_color="red";
+        }
+        else {
+            party="Republican Won";
+            text_color="red";
+        }
+        d3.select("#party_text").text(party).style("color",text_color);
+        stateData = {};
+	    var states_names=["AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "DC", "FL", "GA", "HI", "ID",
+                          "IL", "IN", "IA", "KS", "KY", "LS", "ME", "MD", "MA", "MI", "MN", "MS", "MO",
+                          "MT", "NE", "NV", "NH", "NJ", "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA",
+                          "RI", "SC", "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY"];
+        for (i=0;i<=50;i++) {
+            if (mydata_1[j-1][i]>0) {
+                stateData[states_names[i]]={votes_margin:mydata_1[j-1][i],color:d3.interpolate("#ffe6e6","#e60000")(Math.pow(Math.abs(mydata_1[j-1][i]/86),1/3))};
+            }
+            else if (mydata_1[j-1][i]<0) {
+                stateData[states_names[i]]={votes_margin:mydata_1[j-1][i],color:d3.interpolate("#e6e6ff","#0000e6")(Math.abs(mydata_1[j-1][i]/86),1/3)};
+            }
+            else {
+                stateData[states_names[i]]={votes_margin:mydata_1[j-1][i],color:d3.interpolate("white","white")(0)};
+            }
+		};	
+	/* clear all elements within the #statesvg and redraw states on id #statesvg */
+    d3.select("#statesvg").selectAll("*").remove();
+	uStates.draw("#statesvg", stateData, tooltipHtml);
+    };
+</script>
+
+
+
+<!-- The scripts for creating the interactive boxplot -->
+<script>
+	function tooltipHtml2(d){	/* function to create html content string in tooltip div. */
+		return "<p>"+d3.select(d).attr("id")+"</p>";
+	}
+</script>
+<script>
+    d3.select("#entire_canvas").append("text").attr("x",1250).attr("y",669).text("Votes Margin (%)").attr("font-size","24px").attr("fill","gray");
+    var original_color;
+	boxplot_draw = function(id, data, toolTip){		
+        function mouseOver(d){
+			d3.select("#tooltip_2").transition().duration(200).style("opacity", 1);      			
+			d3.select("#tooltip_2").html(toolTip(this))  
+				.style("left", (d3.event.pageX) + "px")     
+				.style("top", (d3.event.pageY - 28) + "px");
+            original_color=d3.select(this).style("fill");
+            d3.select(this).style("fill","green");
+		}		
+        function mouseOut(){
+			d3.select("#tooltip_2").transition().duration(500).style("opacity", 0);
+            d3.select(this).style("fill",original_color);
+		}
+        d3.select("#tooltip_2").attr("opacity","0");
+        for (i=0;i<=50;i++) {
+        if (data[i][1]>0) {
+            d3.select("#mysvg1").append("svg").property("id","svg"+i).attr("x",30).attr("y",12*i).attr("width", 600).attr("height", 9).append("rect").property("id",data[i][0]).attr("x", 300+3*(data[i][1]-data[i][2])).attr("y", 0).attr("width", 6*data[i][2]).attr("height",9).style("fill", "red").on("mouseover", mouseOver).on("mouseout", mouseOut).attr("class","boxes");
+        }
+        else {
+            d3.select("#mysvg1").append("svg").property("id","svg"+i).attr("x",30).attr("y",12*i).attr("width", 600).attr("height", 9).append("rect").property("id",data[i][0]).attr("x", 300+3*(data[i][1]-data[i][2])).attr("y", 0).attr("width", 6*data[i][2]).attr("height",9).style("fill", "blue").on("mouseover", mouseOver).on("mouseout", mouseOut).attr("class","boxes");
+        }
+        d3.select("#svg"+i).append("line").attr("x1",300+3*data[i][1]).attr("x2",300+3*data[i][1]).attr("y1",0).attr("y2",9).style("stroke","black").style("stroke-width",2);
+        d3.select("#svg"+i).append("line").attr("x1",300+3*data[i][3]).attr("x2",300+3*data[i][3]).attr("y1",0).attr("y2",9).style("stroke","gray").style("stroke-width",1);
+        d3.select("#svg"+i).append("line").attr("x1",300+3*data[i][4]).attr("x2",300+3*data[i][4]).attr("y1",0).attr("y2",9).style("stroke","gray").style("stroke-width",1);
+        d3.select("#svg"+i).append("line").attr("x1",300+3*data[i][4]).attr("x2",300+3*data[i][3]).attr("y1",4.5).attr("y2",4.5).style("stroke","gray").style("stroke-width",0.75).style("stroke-dasharray","5,5")
+        };    d3.select("#mysvg1").append("svg").attr("x",329).attr("y",0).attr("width",2).attr("height",621).style("opacity",0.5).append("line").attr("x1",1).attr("x2",1).attr("y1",0).attr("y2",621).style("stroke","black");
+        var vis = d3.select("#mysvg1")
+                .append("svg")
+                .attr("x",0)
+                .attr("y",0)
+                .attr("width", 35)
+                .attr("height", 621);
+        var vis2 = d3.select("#mysvg1")
+                .append("svg")
+                .attr("x",15.5)
+                .attr("y",621)
+                .attr("width", 630)
+                .attr("height", 54);
+
+        var yScale = d3.scale.linear().range([626, -5]);
+        var xScale = d3.scale.linear().domain([-105,110]).range([-1,645]);
+        var yAxis = d3.svg.axis()
+            .orient("left")
+            .scale(yScale).tickFormat("");
+        var xAxis = d3.svg.axis()
+            .orient("bottom")
+            .scale(xScale).ticks(11);
+        vis.append("g")
+            .attr("class","y axis")
+            .attr("id","yAxis")
+            .attr("transform", "translate("+30+",0)")
+            .call(yAxis);
+        vis2.append("g")
+            .attr("class","x axis")
+            .attr("id","xAxis")
+            .call(xAxis);
+	}
+</script>
+<script>
+    var mydata2=[[["Alabama",13.8133333333333,23.4202557832399,69.5,-17.1],["Alaska",16.0785714285714,17.0574224119783,36.8,-31.8],   ["Arizona",15.0066666666667,11.7848853965375,33.9,-2.2],["Arkansas",2.87333333333333,18.6525167458008,38.2,-30.1],["California",-3.12666666666667,14.0251542729823,16.8,-24],["Colorado",7.46,14.3431317560506,28.3,-23.1],["Connecticut",-3.51333333333333,17.8853438269865,27.4,-35.7],["Delaware",-3.17333333333333,14.5414907207257,20.4,-25],["District of Columbia",-71.9,8.77258988744677,-56.5,-86],["Florida",8.74666666666667,14.487574314695,44.1,-5.7],["Georgia",2.54666666666667,22.2558777683131,50.4,-33.7],["Hawaii",-14.85,22.4900234292042,25,-57.6],["Idaho",26.3733333333333,13.3430809607006,46,-1.8],["Illinois",-3.32,14.2143890879227,19.2,-25.1],["Indiana",12.6866666666667,11.0055094427854,32.8,-12.4],["Iowa",1.12,12.27356043348,18.4,-24],["Kansas",19.14,11.8867152737836,38.2,-9],["Kentucky",7.92666666666667,14.3226826431098,28.6,-28.3],["Louisiana",7.45333333333333,15.0267317360318,36.9,-21.8],["Maine",-0.626666666666667,20.3505516480746,41.8,-37.6],["Maryland",-7.16,15.8603188582612,23.9,-31],["Massachusetts",-17.8266666666667,17.200019379834,18.9,-52.8],["Michigan",-2.18666666666667,13.5429932683534,19,-33.6],["Minnesota",-6.94666666666667,8.87628193290304,7.6,-27.8],["Mississippi",13.2,26.4711433181763,74.2,-33.7],["Missouri",1.85333333333333,12.2791266945558,24.6,-28],["Montana",9.94666666666667,11.8858779750633,25,-18.3],["Nebraska",25.1133333333333,12.0584805170864,41.8,-5.2],["Nevada",7.34,16.1766498385791,35.6,-17.2],["New Hampshire",8.43333333333333,18.9424944301983,37.7,-27.8],["New Jersey",-0.0666666666666667,17.9982406547603,30.5,-31.7],["New Mexico",2.58666666666667,13.3392474978735,24.5,-18.6],["New York",-9.92,17.8030174007506,22.5,-37.3],["North Carolina",6.44,13.6723809192108,40.6,-12.4],["North Dakota",16.8133333333333,13.2619146789738,37.9,-16.1],["Ohio",3.78,12.3404213866464,22.2,-25.8],["Oklahoma",19.86,15.615962529229,49.7,-11.4],["Oregon",-1.97333333333333,11.473974692237,12.2,-27.7],["Pennsylvania",-1.97333333333333,11.6117223200564,20,-30.2],["Rhode Island",-18.9533333333333,19.1355639980589,16.6,-61.8],["South Carolina",10.22,15.7162427352814,43.1,-20.2],["South Dakota",12.1933333333333,10.7653190959718,28.8,-11.2],["Tennessee",7.38666666666667,13.3171675810193,38,-13],["Texas",9.7,14.7527721365947,32.9,-26.8],["Utah",30.8733333333333,16.6830310138633,52.2,-9.4],["Vermont",-2.54666666666667,24.4467019881054,44.4,-37.1],["Virginia",9.06,12.2756320756669,37.7,-7.3],["Washington",-2.57333333333333,12.386713311717,18.3,-24.6],["West Virginia",0.133333333333333,17.0877845536623,27.2,-35.8],["Wisconsin",-0.72,11.2229484284911,23.8,-24.4],["Wyoming",24.4,16.0361644862034,42.3,-13.2]],
+    [['Utah',30.8733333333333,16.6830310138633,52.2,-9.4],['Idaho',26.3733333333333,13.3430809607006,46,-1.8],['Nebraska',25.1133333333333,12.0584805170864,41.8,-5.2],['Wyoming',24.4,16.0361644862034,42.3,-13.2],['Oklahoma',19.86,15.615962529229,49.7,-11.4],['Kansas',19.14,11.8867152737836,38.2,-9],['North Dakota',16.8133333333333,13.2619146789738,37.9,-16.1],['Alaska',16.0785714285714,17.0574224119783,36.8,-31.8],['Arizona',15.0066666666667,11.7848853965375,33.9,-2.2],['Alabama',13.8133333333333,23.4202557832399,69.5,-17.1],['Mississippi',13.2,26.4711433181763,74.2,-33.7],['Indiana',12.6866666666667,11.0055094427854,32.8,-12.4],['South Dakota',12.1933333333333,10.7653190959718,28.8,-11.2],['South Carolina',10.22,15.7162427352814,43.1,-20.2],['Montana',9.94666666666667,11.8858779750633,25,-18.3],['Texas',9.7,14.7527721365947,32.9,-26.8],['Virginia',9.06,12.2756320756669,37.7,-7.3],['Florida',8.74666666666667,14.487574314695,44.1,-5.7],['New Hampshire',8.43333333333333,18.9424944301983,37.7,-27.8],['Kentucky',7.92666666666667,14.3226826431098,28.6,-28.3],['Colorado',7.46,14.3431317560506,28.3,-23.1],['Louisiana',7.45333333333333,15.0267317360318,36.9,-21.8],['Tennessee',7.38666666666667,13.3171675810193,38,-13],['Nevada',7.34,16.1766498385791,35.6,-17.2],['North Carolina',6.44,13.6723809192108,40.6,-12.4],['Ohio',3.78,12.3404213866464,22.2,-25.8],['Arkansas',2.87333333333333,18.6525167458008,38.2,-30.1],['New Mexico',2.58666666666667,13.3392474978735,24.5,-18.6],['Georgia',2.54666666666667,22.2558777683131,50.4,-33.7],['Missouri',1.85333333333333,12.2791266945558,24.6,-28],['Iowa',1.12,12.27356043348,18.4,-24],['West Virginia',0.133333333333333,17.0877845536623,27.2,-35.8],['New Jersey',-0.0666666666666667,17.9982406547603,30.5,-31.7],['Maine',-0.626666666666667,20.3505516480746,41.8,-37.6],['Wisconsin',-0.72,11.2229484284911,23.8,-24.4],['Oregon',-1.97333333333333,11.473974692237,12.2,-27.7],['Pennsylvania',-1.97333333333333,11.6117223200564,20,-30.2],['Michigan',-2.18666666666667,13.5429932683534,19,-33.6],['Vermont',-2.54666666666667,24.4467019881054,44.4,-37.1],['Washington',-2.57333333333333,12.386713311717,18.3,-24.6],['California',-3.12666666666667,14.0251542729823,16.8,-24],['Delaware',-3.17333333333333,14.5414907207257,20.4,-25],['Illinois',-3.32,14.2143890879227,19.2,-25.1],['Connecticut',-3.51333333333333,17.8853438269865,27.4,-35.7],['Minnesota',-6.94666666666667,8.87628193290304,7.6,-27.8],['Maryland',-7.16,15.8603188582612,23.9,-31],['New York',-9.92,17.8030174007506,22.5,-37.3],['Hawaii',-14.85,22.4900234292042,25,-57.6],['Massachusetts',-17.8266666666667,17.200019379834,18.9,-52.8],['Rhode Island',-18.9533333333333,19.1355639980589,16.6,-61.8],
+    ['District of Columbia',-71.90000000,8.772590,-56.5,-86.0]]];
+    var x_yaxis=10;
+    update1(1);
+    d3.select("#menu1").on("input", function() {update1(+this.value);});
+    function update1(y) {
+       
+	   /* clear all elements within the #statesvg and redraw states on id #statesvg */
+       d3.select("#mysvg1").selectAll("*").remove();
+	   boxplot_draw("#mysvg1", mydata2[y-1], tooltipHtml2);
+    };
+</script>
+    
+</body>
+</html>
